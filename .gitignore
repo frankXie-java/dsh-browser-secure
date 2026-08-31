@@ -5,3 +5,10 @@ node_modules/
 !benchmark/lib/**
 **/dist/
 **/dist-firefox/
+
+# Local-only secrets (PAT etc.) — never commit
+.env
+
+# Extension signing artifacts — the .pem is a PRIVATE KEY, never commit it.
+*.crx
+*.pem

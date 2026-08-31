@@ -81,6 +81,12 @@ export interface PanelCopy {
     noTrustedOrigins: string
     remove: string
     removeOrigin: (origin: string) => string
+    sensitiveSelectors: string
+    sensitiveSelectorsHelp: string
+    sensitiveSelectorsPlaceholder: string
+    sensitiveKeywords: string
+    sensitiveKeywordsHelp: string
+    sensitiveKeywordsPlaceholder: string
     save: string
     cancel: string
     snapshotHint: (maxChars: number) => string
@@ -294,6 +300,12 @@ const EN: PanelCopy = {
     noTrustedOrigins: 'No domains are currently trusted.',
     remove: 'Remove',
     removeOrigin: (origin) => `Remove ${origin}`,
+    sensitiveSelectors: 'Extra sensitive-field selectors',
+    sensitiveSelectorsHelp: 'CSS selectors whose fields are always masked from snapshots (e.g. `[data-secret]`, `.internal-note`). Comma-separated.',
+    sensitiveSelectorsPlaceholder: '[data-secret], [data-redact], .internal-note',
+    sensitiveKeywords: 'Extra sensitive-field keywords',
+    sensitiveKeywordsHelp: 'Name, id, or aria-label fragments treated as sensitive in addition to the built-in list (password, credit card, secret, …). Comma-separated.',
+    sensitiveKeywordsPlaceholder: 'customer-no, employee-id',
     save: 'Save & Connect',
     cancel: 'Cancel',
     snapshotHint: (maxChars) => `Page snapshots are limited to ${maxChars} characters and longer content is truncated. Change snapshotMaxChars in the dsh plugin to adjust this limit.`,
@@ -507,6 +519,12 @@ const ZH: PanelCopy = {
     noTrustedOrigins: '尚未信任任何域名。',
     remove: '移除',
     removeOrigin: (origin) => `移除 ${origin}`,
+    sensitiveSelectors: '额外敏感字段选择器',
+    sensitiveSelectorsHelp: '命中即从快照中遮蔽的 CSS 选择器（如 `[data-secret]`、`.internal-note`）。逗号分隔。',
+    sensitiveSelectorsPlaceholder: '[data-secret], [data-redact], .internal-note',
+    sensitiveKeywords: '额外敏感字段关键字',
+    sensitiveKeywordsHelp: '除内置列表（password、credit card、secret 等）外，匹配 name/id/aria-label 即视为敏感的关键字。逗号分隔。',
+    sensitiveKeywordsPlaceholder: 'customer-no, employee-id',
     save: '保存并连接',
     cancel: '取消',
     snapshotHint: (maxChars) => `页面快照上限为 ${maxChars} 字符，超出内容会被截断。可在 dsh 插件中调整 snapshotMaxChars。`,

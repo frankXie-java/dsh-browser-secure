@@ -31,6 +31,7 @@ import { dshHomePath } from '@deepseek-ai/dsh-home-paths'
 import { BridgeServer } from './server.ts'
 import { BrowserContextInjector } from './browser-context.ts'
 import { registerBrowserTools } from './tools.ts'
+import { installAudit, type AuditConfig } from './audit.ts'
 import {
   BRIDGE_CONFIG_PATH,
   BRIDGE_PATH,
@@ -77,6 +78,8 @@ export interface Config {
   sessionWorkspacePath?: string
   /** Defer real session creation until the first prompt. Defaults to true. */
   deferSessionCreate?: boolean
+  /** Audit and egress-policy layer; see `AuditConfig`. Disabled when absent. */
+  audit?: AuditConfig
 }
 
 export const Config: z<Config> = z.object({
@@ -86,10 +89,16 @@ export const Config: z<Config> = z.object({
   maxInteractiveItems: z.number().step(1).min(1).default(DEFAULT_MAX_INTERACTIVE_ITEMS),
   sessionWorkspacePath: z.string().default(DEFAULT_SESSION_WORKSPACE_PATH),
   deferSessionCreate: z.boolean().default(DEFAULT_DEFER_SESSION_CREATE),
+  audit: z.object({
+    enabled: z.boolean(),
+    auditDir: z.string(),
+    allowedHosts: z.array(z.string()),
+    mcpAllow: z.array(z.string()),
+  }),
 })
 
 /** The shape after schemastery applies its defaults to every field. */
-type ResolvedConfig = Required<Omit<Config, 'token'>> & Pick<Config, 'token'>
+type ResolvedConfig = Required<Omit<Config, 'token' | 'audit'>> & Pick<Config, 'token' | 'audit'>
 
 /** Configured budgets must be positive integers. Exported for validation tests. */
 export function assertPositiveInteger(name: string, value: number): void {
@@ -207,6 +216,13 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     })
     return () => { for (const dispose of disposers.values()) dispose() }
   }, 'bridge-browser: browser tools')
+
+  // Sensitive-intranet posture: audit every tool call and gate egress targets.
+  // The layer is inert unless `audit` config is present in the composition.
+  if (config.audit !== undefined) {
+    installAudit(ctx, config.audit)
+    ctx.logger.info(`bridge-browser: audit layer enabled (allowedHosts=${config.audit.allowedHosts?.length ?? 0}, mcpAllow=${config.audit.mcpAllow?.length ?? 0})`)
+  }
 
   // Optional system-prompt contribution: a one-line hint only — the model is
   // told to fetch snapshots on demand instead of hoarding page text.

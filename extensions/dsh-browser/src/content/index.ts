@@ -14,7 +14,29 @@ import { DEFAULT_SNAPSHOT_MAX_CHARS } from '@yuxianglin/dsh-bridge-browser/src/p
 import { runAction, ActionError } from './actions.ts'
 import { ElementIds } from './ids.ts'
 import { SelectionWatcher } from './selection.ts'
+import { configureSensitivePolicy } from './privacy.ts'
 import type { SnapshotBudget } from './snapshot.ts'
+
+/** Deployment privacy overrides live in `chrome.storage.local` under dshSettings. */
+const SETTINGS_STORAGE_KEY = 'dshSettings'
+
+/** Load extraSensitiveSelectors/extraSensitiveKeywords and apply them. */
+async function loadPrivacyPolicy(): Promise<void> {
+  try {
+    const stored = await chrome.storage.local.get(SETTINGS_STORAGE_KEY)
+    const settings = stored[SETTINGS_STORAGE_KEY] as { extraSensitiveSelectors?: unknown; extraSensitiveKeywords?: unknown } | undefined
+    const selectors = Array.isArray(settings?.extraSensitiveSelectors)
+      ? settings.extraSensitiveSelectors.filter((value): value is string => typeof value === 'string')
+      : []
+    const keywords = Array.isArray(settings?.extraSensitiveKeywords)
+      ? settings.extraSensitiveKeywords.filter((value): value is string => typeof value === 'string')
+      : []
+    configureSensitivePolicy({ selectors, keywords })
+  } catch {
+    // Storage read failure falls back to built-in masking only.
+    configureSensitivePolicy(undefined)
+  }
+}
 
 /** Negotiated snapshot budgets, patched in from the background via message. */
 let budget: SnapshotBudget = { maxItems: 60, maxForms: 30, maxChars: DEFAULT_SNAPSHOT_MAX_CHARS }
@@ -103,6 +125,9 @@ contentGlobal[CONTENT_SELECTION_WATCHER]?.dispose()
 contentGlobal[CONTENT_SCRIPT_LISTENER] = onMessage
 contentGlobal[CONTENT_SELECTION_WATCHER] = selectionWatcher
 chrome.runtime.onMessage.addListener(onMessage)
+
+// Apply deployment privacy overrides before any snapshot can be requested.
+void loadPrivacyPolicy()
 
 // A navigation action answers before unloading. The replacement content
 // script announces when the new document can accept its automatic snapshot,

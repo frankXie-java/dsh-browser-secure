@@ -551,6 +551,8 @@ export function App(): React.JSX.Element {
   const [approvalQueue, setApprovalQueue] = useState<ApprovalRequest[]>([])
   const [tabAffinity, setTabAffinity] = useState<TabAffinityState | null>(null)
   const [trustedOriginInput, setTrustedOriginInput] = useState('')
+  const [sensitiveSelectorText, setSensitiveSelectorText] = useState('')
+  const [sensitiveKeywordText, setSensitiveKeywordText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [showSessionPicker, setShowSessionPicker] = useState(false)
   const [loadingSessions, setLoadingSessions] = useState(false)
@@ -635,14 +637,19 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     void chrome.storage.local.get('dshSettings').then((stored) => {
       const raw = stored.dshSettings as Partial<PanelSettings> | undefined
-      setSettings({
+      const seeded = {
         bridgeUrl: raw?.bridgeUrl ?? '',
         token: raw?.token ?? '',
         sharePageContent: raw?.sharePageContent ?? 'auto',
         trustedActionOrigins: raw?.trustedActionOrigins ?? [],
         approvalNotifications: raw?.approvalNotifications ?? true,
         autoResumeSession: raw?.autoResumeSession ?? true,
-      })
+        extraSensitiveSelectors: raw?.extraSensitiveSelectors ?? [],
+        extraSensitiveKeywords: raw?.extraSensitiveKeywords ?? [],
+      }
+      setSettings(seeded)
+      setSensitiveSelectorText(seeded.extraSensitiveSelectors.join(', '))
+      setSensitiveKeywordText(seeded.extraSensitiveKeywords.join(', '))
     })
   }, [])
 
@@ -1504,6 +1511,19 @@ export function App(): React.JSX.Element {
       : { ...current, trustedActionOrigins: current.trustedActionOrigins.filter((candidate) => candidate !== origin) })
   }
 
+  /** Parse a comma-separated list into trimmed, de-duplicated entries. */
+  function splitList(value: string): string[] {
+    return [...new Set(value.split(',').map((entry) => entry.trim()).filter((entry) => entry !== ''))]
+  }
+
+  function commitSensitiveSelectors(value: string): void {
+    setSettings((current) => current === null ? current : { ...current, extraSensitiveSelectors: splitList(value) })
+  }
+
+  function commitSensitiveKeywords(value: string): void {
+    setSettings((current) => current === null ? current : { ...current, extraSensitiveKeywords: splitList(value) })
+  }
+
   // 状态栏只显示连接状态；快照上限是技术细节，在设置页说明（见 hint）。
   const statusText = copy.status[state]
   const sessionMenuTitle = sessionTitle ?? copy.app.newSession
@@ -1708,6 +1728,32 @@ export function App(): React.JSX.Element {
               <button onClick={() => removeTrustedOrigin(origin)} aria-label={copy.settings.removeOrigin(origin)}>{copy.settings.remove}</button>
             </div>
           ))}
+        </section>
+        <section className="sensitive-fields" aria-labelledby="sensitive-fields-title">
+          <div>
+            <span id="sensitive-fields-title">{copy.settings.sensitiveSelectors}</span>
+            <small>{copy.settings.sensitiveSelectorsHelp}</small>
+          </div>
+          <textarea
+            aria-label={copy.settings.sensitiveSelectors}
+            rows={2}
+            value={sensitiveSelectorText}
+            onChange={(event) => { setSensitiveSelectorText(event.target.value); commitSensitiveSelectors(event.target.value) }}
+            placeholder={copy.settings.sensitiveSelectorsPlaceholder}
+            spellCheck={false}
+          />
+          <div>
+            <span>{copy.settings.sensitiveKeywords}</span>
+            <small>{copy.settings.sensitiveKeywordsHelp}</small>
+          </div>
+          <textarea
+            aria-label={copy.settings.sensitiveKeywords}
+            rows={2}
+            value={sensitiveKeywordText}
+            onChange={(event) => { setSensitiveKeywordText(event.target.value); commitSensitiveKeywords(event.target.value) }}
+            placeholder={copy.settings.sensitiveKeywordsPlaceholder}
+            spellCheck={false}
+          />
         </section>
         <div className="settings-actions">
           <button className="primary" onClick={saveSettings}>{copy.settings.save}</button>

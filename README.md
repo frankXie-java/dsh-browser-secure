@@ -2,6 +2,8 @@
 
 **English** | [中文](README.zh.md)
 
+> **Security-hardened fork.** This repository forks [Lum1104/dsh-browser](https://github.com/Lum1104/dsh-browser) and adds an audit + egress-policy layer for sensitive intranets: per-tool-call JSONL audit logging and host/domain allowlist gating for navigation and MCP tools, plus configurable sensitive-field masking in page snapshots. See [Security](#security) and the bridge plugin's `audit` config below.
+
 <img width="1701" height="897" alt="dsh Browser Control" src="https://github.com/user-attachments/assets/3b1f3a25-f962-4e02-a9ef-d23e0d01fc8e" />
 
 Connect [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) to the Chrome or Firefox tab you are already using. The model can read page content, click controls, fill forms, scroll, and navigate while preserving your login state, session, and cookies. A side panel or sidebar provides the conversation UI.
@@ -177,3 +179,16 @@ Notes:
 - Text you highlight is captured only while a side panel is open and page sharing is not `off`, and never from password or payment-card fields. It stays inside the extension until you send the message, is dropped when you dismiss it or its page navigates or closes, and reaches the model inside the same untrusted-content boundary as page snapshots — including its source title and URL, which the page also controls.
 - Page-authored text is wrapped as untrusted input. The default `auto` mode reads only the controlled tab without an extra prompt; privacy-sensitive users can select `ask` for per-read confirmation or `off` to block reads entirely. In `ask` mode, the read dialog can allow one read or persistently switch back to `auto`; this can be reversed in Settings. Read page text is sent to the selected model.
 - Click, type, keypress, navigation, history, and reload calls fail closed until the user approves them. An origin may be trusted for the current side-panel session (cleared when the last panel closes or the service worker restarts), while permanent trust is managed explicitly in Settings. Explicit cross-origin `browser_navigate` calls and unknown history destinations always prompt again.
+- **Audit + egress allowlist (fork addition).** The bridge plugin ships `installAudit()` in `packages/browser/bridge-browser/src/audit.ts`, opt-in via the plugin's `audit` config: `tools/post-execute` appends one metadata-only JSONL line per tool call to `auditDir/<date>.jsonl` (timestamp, session id, tool name, URL host when present — never arguments, page text, or result bodies), and `tools/pre-execute` denies `browser_navigate`/`browser_get_text` hosts not in `allowedHosts` and MCP tools whose server prefix is not in `mcpAllow`. Example profile patch:
+
+```yaml
+- id: bridge-browser
+  name: '@yuxianglin/dsh-bridge-browser'
+  config:
+    audit:
+      enabled: true
+      allowedHosts: ['*.corp.example.com', '127.0.0.1']
+      mcpAllow: ['atlassian']
+```
+
+- **Configurable sensitive-field masking (fork addition).** The content script masks password/credit-card/secret fields by default; deployments can add CSS selectors (`[data-secret]`, `.internal-note`) and name/id/aria-label keywords via the side-panel Settings, persisted as `extraSensitiveSelectors`/`extraSensitiveKeywords` in `chrome.storage.local`.

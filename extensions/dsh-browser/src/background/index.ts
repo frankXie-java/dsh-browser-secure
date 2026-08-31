@@ -81,6 +81,10 @@ export interface Settings {
   approvalNotifications: boolean
   /** Restore the last active browser conversation when the panel reopens. */
   autoResumeSession: boolean
+  /** Extra CSS selectors whose fields are always masked from snapshots. */
+  extraSensitiveSelectors: string[]
+  /** Extra name/id/aria-label fragments treated as sensitive fields. */
+  extraSensitiveKeywords: string[]
 }
 
 const SETTINGS_DEFAULTS: Settings = {
@@ -91,6 +95,8 @@ const SETTINGS_DEFAULTS: Settings = {
   trustedActionOrigins: [],
   approvalNotifications: true,
   autoResumeSession: true,
+  extraSensitiveSelectors: [],
+  extraSensitiveKeywords: [],
 }
 
 /**
@@ -242,6 +248,12 @@ function normalizeSettings(candidate: Settings): Settings {
     trustedActionOrigins: trusted,
     approvalNotifications: candidate.approvalNotifications !== false,
     autoResumeSession: candidate.autoResumeSession !== false,
+    extraSensitiveSelectors: Array.isArray(candidate.extraSensitiveSelectors)
+      ? candidate.extraSensitiveSelectors.filter((value): value is string => typeof value === 'string')
+      : [],
+    extraSensitiveKeywords: Array.isArray(candidate.extraSensitiveKeywords)
+      ? candidate.extraSensitiveKeywords.filter((value): value is string => typeof value === 'string')
+      : [],
   }
 }
 

@@ -2,6 +2,8 @@
 
 [English](README.md) | **中文**
 
+> **安全加固 fork。** 本仓库 fork 自 [Lum1104/dsh-browser](https://github.com/Lum1104/dsh-browser)，为敏感内网新增审计与出口白名单层：每次工具调用的 JSONL 审计日志、导航与 MCP 工具的域名白名单门禁，以及页面快照的可配置敏感字段遮蔽。详见下文 [安全](#安全) 与 bridge 插件的 `audit` 配置。
+
 <img width="1701" height="897" alt="dsh 浏览器操作" src="https://github.com/user-attachments/assets/3b1f3a25-f962-4e02-a9ef-d23e0d01fc8e" />
 
 把 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 连接到你正在使用的 Chrome 或 Firefox 标签页。模型可以读取页面内容、点击控件、填写表单、滚动与导航，同时保留登录态、会话和 Cookie。侧边栏提供对话界面。
@@ -177,3 +179,16 @@ pnpm --filter dsh-browser-extension run test
 - 只有在侧栏打开、且页面共享不是「关闭」时才会捕获划选内容，密码和卡号字段永不读取。内容在发送之前始终留在扩展内部；移除、页面跳转或标签页关闭都会丢弃它；发送时与页面快照一样包在不可信内容边界内，来源标题和 URL 同样由页面提供，因此也放在边界之内。
 - 网页文字会标记为不可信输入。默认「自动共享」只按需读取受控标签页且不额外弹窗；对隐私敏感时可选择「每次询问」，或用「关闭」完全阻断读取。在「每次询问」模式下，读取弹窗可以仅允许一次，也可以持久切回自动读取；之后仍可在设置中关闭。读取的页面文字会发送给当前选择的模型。
 - 点击、输入、按键、导航、历史跳转和刷新默认失败关闭，必须由用户批准。可以只在当前侧栏会话中信任单个 origin（最后一个侧栏关闭或 Service Worker 重启即清空）；永久信任需在设置中显式管理。显式跨域 `browser_navigate` 和未知目标的历史跳转始终重新询问。
+- **审计 + 出口白名单（fork 新增）。** bridge 插件提供 `installAudit()`（`packages/browser/bridge-browser/src/audit.ts`），经插件 `audit` 配置开启：`tools/post-execute` 对每次工具调用往 `auditDir/<date>.jsonl` 追加一行**仅元数据**的 JSONL（时间戳、会话 id、工具名、携带 URL 时含主机——参数、页面正文与结果体一律不写）；`tools/pre-execute` 拒绝 `browser_navigate`/`browser_get_text` 中不在 `allowedHosts` 的主机，以及 server 前缀不在 `mcpAllow` 的 MCP 工具。示例 profile patch：
+
+```yaml
+- id: bridge-browser
+  name: '@yuxianglin/dsh-bridge-browser'
+  config:
+    audit:
+      enabled: true
+      allowedHosts: ['*.corp.example.com', '127.0.0.1']
+      mcpAllow: ['atlassian']
+```
+
+- **可配置敏感字段遮蔽（fork 新增）。** content 脚本默认遮蔽 password/credit-card/secret 等字段；部署可在侧栏设置中添加 CSS 选择器（`[data-secret]`、`.internal-note`）与 name/id/aria-label 关键字，持久化为 `chrome.storage.local` 的 `extraSensitiveSelectors`/`extraSensitiveKeywords`。
