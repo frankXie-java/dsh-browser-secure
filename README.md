@@ -4,6 +4,8 @@
 
 > **Security-hardened fork.** This repository forks [Lum1104/dsh-browser](https://github.com/Lum1104/dsh-browser) and adds an audit + egress-policy layer for sensitive intranets: per-tool-call JSONL audit logging and host/domain allowlist gating for navigation and MCP tools, plus configurable sensitive-field masking in page snapshots. See [Security](#security) and the bridge plugin's `audit` config below.
 
+[![CI](https://github.com/frankXie-java/dsh-browser-secure/actions/workflows/ci.yml/badge.svg)](https://github.com/frankXie-java/dsh-browser-secure/actions/workflows/ci.yml)
+
 <img width="1701" height="897" alt="dsh Browser Control" src="https://github.com/user-attachments/assets/3b1f3a25-f962-4e02-a9ef-d23e0d01fc8e" />
 
 Connect [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) to the Chrome or Firefox tab you are already using. The model can read page content, click controls, fill forms, scroll, and navigate while preserving your login state, session, and cookies. A side panel or sidebar provides the conversation UI.

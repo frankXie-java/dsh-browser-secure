@@ -4,6 +4,8 @@
 
 > **安全加固 fork。** 本仓库 fork 自 [Lum1104/dsh-browser](https://github.com/Lum1104/dsh-browser)，为敏感内网新增审计与出口白名单层：每次工具调用的 JSONL 审计日志、导航与 MCP 工具的域名白名单门禁，以及页面快照的可配置敏感字段遮蔽。详见下文 [安全](#安全) 与 bridge 插件的 `audit` 配置。
 
+[![CI](https://github.com/frankXie-java/dsh-browser-secure/actions/workflows/ci.yml/badge.svg)](https://github.com/frankXie-java/dsh-browser-secure/actions/workflows/ci.yml)
+
 <img width="1701" height="897" alt="dsh 浏览器操作" src="https://github.com/user-attachments/assets/3b1f3a25-f962-4e02-a9ef-d23e0d01fc8e" />
 
 把 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 连接到你正在使用的 Chrome 或 Firefox 标签页。模型可以读取页面内容、点击控件、填写表单、滚动与导航，同时保留登录态、会话和 Cookie。侧边栏提供对话界面。
